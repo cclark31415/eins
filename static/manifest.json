@@ -1,0 +1,21 @@
+{
+  "name": "Eins — Card Game",
+  "short_name": "Eins",
+  "description": "A free browser card game loosely based on Crazy Eights. One player vs. three bots, race to 500 points.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B1220",
+  "theme_color": "#E8834F",
+  "lang": "en",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/static/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

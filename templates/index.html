@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0B1220">
+    <meta name="color-scheme" content="dark light">
+    <meta name="format-detection" content="telephone=no">
+
+    <title>Eins · Free online card game loosely based on Crazy Eights · Play vs 3 bots in your browser</title>
+    <meta name="description" content="Play Eins free in your browser — a single-player card game loosely based on Crazy Eights. Battle three bots across rounds, call Eins on your second-to-last card, and race to 500 points to win the tournament. No sign-up, no install.">
+    <meta name="keywords" content="eins, crazy eights, card game, online card game, browser card game, free card game, single player card game, crazy eights variant, browser game, card game vs bots, web card game, html5 card game">
+    <meta name="author" content="Chris Clark">
+    <meta name="publisher" content="Chris Clark">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+    <meta name="googlebot" content="index, follow">
+    <meta name="bingbot" content="index, follow">
+    <meta name="rating" content="general">
+    <link rel="canonical" href="https://chrisclark.net/eins/">
+
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon.svg') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+
+    <meta name="application-name" content="Eins">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Eins">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Eins · A free online card game">
+    <meta property="og:description" content="Play Eins free in your browser — a card game loosely based on Crazy Eights. Battle three bots, call Eins, race to 500 points.">
+    <meta property="og:url" content="https://chrisclark.net/eins/">
+    <meta property="og:site_name" content="chrisclark.net">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:image" content="https://chrisclark.net/eins/static/og-image.svg">
+    <meta property="og:image:type" content="image/svg+xml">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Eins — A free card game loosely based on Crazy Eights; cards displayed against a dark navy background">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Eins · A free card game">
+    <meta name="twitter:description" content="Play Eins free in your browser — a card game loosely based on Crazy Eights. Battle three bots, race to 500 points.">
+    <meta name="twitter:image" content="https://chrisclark.net/eins/static/og-image.svg">
+    <meta name="twitter:image:alt" content="Eins — A free card game loosely based on Crazy Eights">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://chrisclark.net/eins/#website",
+          "url": "https://chrisclark.net/eins/",
+          "name": "Eins",
+          "inLanguage": "en",
+          "publisher": { "@id": "https://chrisclark.net/eins/#person" }
+        },
+        {
+          "@type": "Person",
+          "@id": "https://chrisclark.net/eins/#person",
+          "name": "Chris Clark",
+          "url": "https://chrisclark.net/"
+        },
+        {
+          "@type": "Game",
+          "@id": "https://chrisclark.net/eins/#game",
+          "name": "Eins",
+          "alternateName": ["Eins Card Game", "Crazy Eights variant"],
+          "description": "A free browser-based card game loosely based on Crazy Eights. Play one human against three bots, call Eins on your second-to-last card, and race to 500 points across multiple rounds.",
+          "url": "https://chrisclark.net/eins/",
+          "image": "https://chrisclark.net/eins/static/og-image.svg",
+          "genre": ["Card Game", "Strategy Game", "Family Game"],
+          "playMode": "SinglePlayer",
+          "numberOfPlayers": { "@type": "QuantitativeValue", "value": 4 },
+          "gamePlatform": "Web Browser",
+          "datePublished": "2026-05-10",
+          "inLanguage": "en",
+          "author": { "@id": "https://chrisclark.net/eins/#person" },
+          "publisher": { "@id": "https://chrisclark.net/eins/#person" }
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://chrisclark.net/eins/#webapp",
+          "name": "Eins",
+          "applicationCategory": "GameApplication",
+          "applicationSubCategory": "Card Game",
+          "operatingSystem": "Any (web browser)",
+          "browserRequirements": "Requires JavaScript and a modern HTML5 browser",
+          "url": "https://chrisclark.net/eins/",
+          "isAccessibleForFree": true,
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://chrisclark.net/eins/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How do I play Eins?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "On your turn, play a card that matches the top of the discard pile by color or by number/symbol. Wild and Wild Draw Four cards let you change the active color. If you cannot play, draw one card from the deck — if that card is playable you may play it, otherwise your turn ends. The first player to discard their last card wins the round."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What is the Eins call?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "When you have two cards in hand and are about to play your second-to-last card, you must press the Eins button before playing. If you forget, the next player can press Challenge and you draw six cards as a penalty. Bad challenges (the previous player called Eins or has more than one card) cost the challenger six cards instead."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How is the tournament scored?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "At the end of each round, the winner collects points from the other players' remaining cards: number cards count their face value, Skip / Reverse / Draw Two / −1 are worth 20 points each, and Wild / Wild Draw Four / Wild Draw Six are worth 50 points each. The first player to reach 500 points wins the tournament."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What action cards are in the Eins deck?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Eins uses a 114-card four-color deck: red, yellow, green, and blue, each with one 0, one −1, two each of 1-9, and two each of Skip, Reverse, and Draw Two. The deck also contains four Wild cards, four Wild Draw Four cards, and two Wild Draw Six cards. The −1 card lets the player chain another discard on the same turn."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Do the bots cheat?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. Each bot only sees its own hand, the top of the discard pile, and the current active color — exactly the same information you have. Each bot is randomly assigned an offensive or defensive strategy at the start of the tournament."
+              }
+            }
+          ]
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "chrisclark.net",
+              "item": "https://chrisclark.net/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Eins",
+              "item": "https://chrisclark.net/eins/"
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='eins.css') }}">
+</head>
+<body>
+    <header class="topbar">
+        <a class="site-logo" href="https://chrisclark.net/" aria-label="chrisclark.net home">
+            <img src="{{ url_for('static', filename='CC_Mountain.jpg') }}" alt="" width="320" height="175">
+        </a>
+        <h1 class="brand">Eins</h1>
+        <div class="topbar-meta">
+            <span class="round-chip">Round <span id="round-number">1</span></span>
+        </div>
+        <div class="topbar-actions">
+            <button id="new-game" class="btn">New Tournament</button>
+        </div>
+    </header>
+
+    <main class="table">
+        <section class="opponents">
+            <div class="opponent" data-seat="2">
+                <div class="opponent-name"><span id="name-2">🤖 Bot 2</span> <span class="score-chip">⏆ <span id="score-2">0</span></span></div>
+                <div class="opponent-hand" id="hand-2"></div>
+                <div class="opponent-meta"><span class="count" id="count-2">0</span> cards</div>
+            </div>
+            <div class="opponent-row">
+                <div class="opponent side" data-seat="1">
+                    <div class="opponent-name"><span id="name-1">🤖 Bot 1</span> <span class="score-chip">⏆ <span id="score-1">0</span></span></div>
+                    <div class="opponent-hand vertical" id="hand-1"></div>
+                    <div class="opponent-meta"><span class="count" id="count-1">0</span> cards</div>
+                </div>
+
+                <div class="center">
+                    <div class="direction-arrow" id="direction-indicator" title="Play direction" aria-label="Play direction">
+                        <span class="arrow-glyph">↻</span>
+                        <span class="arrow-label">clockwise</span>
+                    </div>
+                    <div class="piles">
+                        <div class="pile draw-pile" id="draw-pile" title="Draw a card">
+                            <div class="card back"><span class="back-text">Eins</span></div>
+                            <div class="pile-label">Draw</div>
+                        </div>
+                        <div class="pile discard-pile" id="discard-pile">
+                            <div class="card placeholder"></div>
+                            <div class="pile-label">Discard</div>
+                        </div>
+                    </div>
+                    <div class="current-color" id="current-color">
+                        <span class="swatch"></span>
+                        <span class="label">color</span>
+                    </div>
+                </div>
+
+                <div class="opponent side" data-seat="3">
+                    <div class="opponent-name"><span id="name-3">🤖 Bot 3</span> <span class="score-chip">⏆ <span id="score-3">0</span></span></div>
+                    <div class="opponent-hand vertical" id="hand-3"></div>
+                    <div class="opponent-meta"><span class="count" id="count-3">0</span> cards</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="status-bar">
+            <div id="status">Press New Tournament to start.</div>
+        </section>
+
+        <section class="player">
+            <div class="player-name">You <span class="score-chip">⏆ <span id="score-0">0</span></span></div>
+            <div class="player-hand" id="hand-0"></div>
+            <div class="player-actions">
+                <button id="eins-button" class="btn">Eins!</button>
+                <button id="challenge-button" class="btn">Challenge</button>
+            </div>
+            <section class="play-log" aria-label="Play log">
+                <div class="play-log-title">Play log</div>
+                <div class="play-log-list" id="play-log"></div>
+            </section>
+        </section>
+    </main>
+
+    <div id="toast-layer"></div>
+
+    <div class="modal-backdrop hidden" id="color-modal">
+        <div class="modal">
+            <div class="modal-title">Pick a color</div>
+            <div class="color-choices">
+                <button class="color-btn red" data-color="red" aria-label="Red"></button>
+                <button class="color-btn yellow" data-color="yellow" aria-label="Yellow"></button>
+                <button class="color-btn green" data-color="green" aria-label="Green"></button>
+                <button class="color-btn blue" data-color="blue" aria-label="Blue"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop hidden" id="result-modal">
+        <div class="modal">
+            <div class="modal-title" id="result-title">Round Over</div>
+            <pre class="modal-body" id="result-body"></pre>
+            <div class="modal-actions">
+                <button class="btn primary" id="result-new-game">Next Round</button>
+            </div>
+        </div>
+    </div>
+
+    <noscript>
+        <div class="noscript-banner">
+            <strong>Eins requires JavaScript.</strong>
+            Enable JavaScript to play Eins, a free browser card game loosely based on Crazy Eights.
+        </div>
+    </noscript>
+
+    <section class="about" aria-labelledby="about-heading">
+        <h2 id="about-heading">About Eins</h2>
+        <p>
+            Eins is a free, browser-based card game loosely based on Crazy Eights. One human plays
+            against three bot opponents, with each bot randomly assigned an offensive
+            or defensive strategy at the start of the tournament. Bots only see their
+            own hand and the top of the discard pile — exactly the same information
+            available to you.
+        </p>
+
+        <h2>How to play</h2>
+        <ol>
+            <li>On your turn, play a card that matches the top of the discard pile by color or by number/symbol.</li>
+            <li>Wild and Wild Draw Four cards let you choose the active color.</li>
+            <li>If you have no playable card, click the draw pile. If your drawn card is playable you may play it, otherwise your turn ends.</li>
+            <li>When you have two cards left, press the <strong>Eins!</strong> button before playing your next card. If you forget, the next player can challenge you for a six-card penalty.</li>
+            <li>The first player to discard their last card wins the round.</li>
+        </ol>
+
+        <h2>Tournament scoring</h2>
+        <p>
+            At the end of each round, the winner collects points from the other
+            players' remaining cards: number cards count their face value;
+            Skip, Reverse, Draw Two, and −1 are worth 20 points each; Wild,
+            Wild Draw Four, and Wild Draw Six are worth 50 points each. The
+            first player to reach <strong>500 points</strong> wins the tournament.
+        </p>
+
+        <h2>Action cards</h2>
+        <ul>
+            <li><strong>Skip</strong> — the next player loses their turn.</li>
+            <li><strong>Reverse</strong> — play direction reverses.</li>
+            <li><strong>Draw Two</strong> — the next player draws two cards and loses their turn.</li>
+            <li><strong>−1 (Minus One)</strong> — one per color. After playing, the same player gets to discard another card on top of it (a chain card).</li>
+            <li><strong>Wild</strong> — the player chooses a new active color.</li>
+            <li><strong>Wild Draw Four</strong> — choose a color, and the next player draws four cards and loses their turn.</li>
+            <li><strong>Wild Draw Six</strong> — two of these in the deck. Choose a color, and the next player draws six cards and loses their turn.</li>
+        </ul>
+    </section>
+
+    <footer class="version-footer">
+        Eins v<span id="version-number">{{ version.version }}</span>
+        · built <span id="build-time">{{ version.buildTime }}</span>
+    </footer>
+
+    <script src="{{ url_for('static', filename='eins.js') }}"></script>
+</body>
+</html>
