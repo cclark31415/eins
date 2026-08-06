@@ -143,6 +143,8 @@ function drawOne(state) {
         });
         state.discardPile = [top];
         state.deck = shuffle(recycled);
+        state.reshufflePending = true;
+        state.reshuffleCount = recycled.length;
     }
     return state.deck.pop() || null;
 }
@@ -223,6 +225,9 @@ function newGame(prev = null) {
         botNames: prev ? prev.botNames.slice() : pickBotNames(),
         lastRoundResult: null,
         log: [],
+        reshufflePending: false,
+        reshuffleAnimating: false,
+        reshuffleCount: 0,
     };
 
     // Local name lookup — playerName() reads the global state which is still
@@ -593,6 +598,15 @@ function renderDiscard() {
     pile.insertBefore(el, pile.firstChild);
 }
 
+function renderPileCounts() {
+    const drawCount = $('draw-count');
+    const discardCount = $('discard-count');
+    if (drawCount) drawCount.textContent = String(state.deck.length);
+    if (discardCount) discardCount.textContent = String(state.discardPile.length);
+    $('draw-pile').classList.toggle('reshuffling', state.reshuffleAnimating);
+    $('discard-pile').classList.toggle('reshuffling', state.reshuffleAnimating);
+}
+
 function renderColorIndicator() {
     const el = $('current-color');
     el.classList.remove('red', 'yellow', 'green', 'blue');
@@ -666,13 +680,50 @@ function animateDraw(seat) {
     return flyCard(srcRect, dstRect, ghost, ANIM_DRAW_MS);
 }
 
+function animateReshuffle() {
+    if (!state.reshufflePending) return Promise.resolve();
+    state.reshufflePending = false;
+    state.reshuffleAnimating = true;
+    render();
+    const srcRect = rectOf($('discard-pile'));
+    const dstRect = rectOf($('draw-pile'));
+    const ghost = cardEl(null, { faceDown: true });
+    return flyCard(srcRect, dstRect, ghost, 500).then(() => {
+        state.reshuffleAnimating = false;
+        if (state.reshuffleCount > 0) {
+            logEvent(state, `Reshuffled ${state.reshuffleCount} cards into the draw pile.`);
+            state.reshuffleCount = 0;
+        }
+        render();
+    });
+}
+
 // Stagger N draw animations from the pile to the seated player. Used for
 // Draw Two / Wild Draw Four / Eins challenge penalties.
 const DRAW_STAGGER_MS = 90;
 function animateDrawN(seat, n) {
-    for (let i = 0; i < n; i++) {
-        setTimeout(() => animateDraw(seat), i * DRAW_STAGGER_MS);
-    }
+    return new Promise(resolve => {
+        const runDraws = () => {
+            if (n <= 0) {
+                resolve();
+                return;
+            }
+            let completed = 0;
+            for (let i = 0; i < n; i++) {
+                setTimeout(() => {
+                    animateDraw(seat).then(() => {
+                        completed += 1;
+                        if (completed === n) resolve();
+                    });
+                }, i * DRAW_STAGGER_MS);
+            }
+        };
+        if (state.reshufflePending) {
+            animateReshuffle().then(runDraws);
+        } else {
+            runDraws();
+        }
+    });
 }
 
 function showToast(text, colorClass) {
@@ -733,6 +784,7 @@ function render() {
     renderOpponent(3);
     renderPlayer();
     renderDiscard();
+    renderPileCounts();
     renderColorIndicator();
     renderDirection();
     renderDrawPile();
@@ -789,38 +841,38 @@ function finalizeHumanPlay(cardIdx, chosenColor) {
     afterMove(result);
 }
 
-function onHumanDraw() {
+async function onHumanDraw() {
     if (state.currentPlayer !== 0 || state.gameOver || humanInputLocked) return;
     if (state.drewThisTurn) return;
     humanInputLocked = true;
-    animateDraw(0).then(() => {
-        humanInputLocked = false;
-        const c = drawOne(state);
-        if (!c) {
-            renderStatus('Deck empty.', true);
-            return;
-        }
-        state.hands[0].push(c);
-        state.einsCalled[0] = false;
-        state.drewThisTurn = true;
-        state.drawnCardId = c.id;
-        syncEinsFlags(state);
-        logEvent(state, `You drew a card.`);
-        const top = topCard(state);
-        const playable = canPlay(c, top, state.currentColor);
-        render();
-        if (playable) {
-            renderStatus(`Drew ${describeCard(c)}. Play it or end your turn.`);
-            showEndTurnButton(true);
-        } else {
-            renderStatus(`Drew ${describeCard(c)}. Cannot play — passing.`);
-            humanInputLocked = true;
-            setTimeout(() => {
-                humanInputLocked = false;
-                endHumanTurn();
-            }, POST_DRAW_AUTO_END_MS);
-        }
-    });
+    await animateDraw(0);
+    humanInputLocked = false;
+    const c = drawOne(state);
+    if (state.reshufflePending) await animateReshuffle();
+    if (!c) {
+        renderStatus('Deck empty.', true);
+        return;
+    }
+    state.hands[0].push(c);
+    state.einsCalled[0] = false;
+    state.drewThisTurn = true;
+    state.drawnCardId = c.id;
+    syncEinsFlags(state);
+    logEvent(state, `You drew a card.`);
+    const top = topCard(state);
+    const playable = canPlay(c, top, state.currentColor);
+    render();
+    if (playable) {
+        renderStatus(`Drew ${describeCard(c)}. Play it or end your turn.`);
+        showEndTurnButton(true);
+    } else {
+        renderStatus(`Drew ${describeCard(c)}. Cannot play — passing.`);
+        humanInputLocked = true;
+        setTimeout(() => {
+            humanInputLocked = false;
+            endHumanTurn();
+        }, POST_DRAW_AUTO_END_MS);
+    }
 }
 
 function endHumanTurn() {
@@ -1051,8 +1103,9 @@ function doBotTurn() {
         return;
     }
     // No playable: animate a draw, then maybe play.
-    animateDraw(seat).then(() => {
+    animateDraw(seat).then(async () => {
         const drawn = drawOne(state);
+        if (state.reshufflePending) await animateReshuffle();
         if (!drawn) {
             logEvent(state, `${playerName(seat)} drew nothing — deck empty.`);
             renderStatus(`Deck empty. ${playerName(seat)} passes.`);
