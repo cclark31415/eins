@@ -33,12 +33,9 @@
 33.  Instead of recommending a challenge, there should be a two second pause for the bot players before the next player lays down their cards.  The bot players can think during this period[...]
 34.  The deck includes a −1 card — one per color. After playing a −1, the same player gets to discard another card on top of it (a chain). The chained card must follow normal rules ([...]
 35.  The deck includes a Wild Draw Six card — two of them, both wild. When played, the player picks a new active color and the next player draws six cards and loses their turn. It scores[...]
-36.  (Processed) Bot wild-play policy: Bot players should avoid playing a simple Wild card solely to change the active color to the color already selected on the pile, unless they have no [...]
-37.  (Processed) Highlight eligible cards for the human player: the UI must visually indicate all cards that are legal to play at the start of the player's turn (for example: glow, border,[...]
-38.  (Processed) Group the human player's cards by color in ascending order: the hand UI should display color groups left-to-right in color order (e.g., Blue, Green, Red, Yellow or another[...]
-39.  (Processed) Deck update — number cards changed to 1-10: replace the previous 0-9 number cards with 1-10 number cards. Scoring remains the face value for number cards. Update any dec[...]
-40.  (Processed) Wild card UX: when the human player chooses to use a wild card, present a modal/popup to select the new active color. Include a Cancel button in that popup so the player c[...]
-41.  (Note) Item 40 was not present in the original list; items 36-39 have been processed and clarified above. If you intended a separate item 40, please provide its content and I'll incor[...]
-
----
+36.  (Processed) Bot wild-play policy: Bot players should avoid playing a simple Wild card solely to change the active color to the color already selected on the pile, unless they have no other choice.
+37.  (Processed) Highlight eligible cards for the human player: the UI must visually indicate all cards that are legal to play at the start of the player's turn (for example: glow, border, or increased opacity). Clicking a highlighted card attempts to play it; illegal plays are prevented by the game logic. Keyboard accessibility: provide an aria-visible cue and keyboard focus order that follows the highlighted cards.
+38.  (Processed) Group the human player's cards by color in ascending order: the hand UI should display color groups left-to-right in color order (e.g., Blue, Green, Red, Yellow or another agreed color order) and within each group sort cards by type/value in increasing order. This grouping should update whenever the hand changes (draw, play, or sort toggle).
+39.  (Processed) Deck update — number cards changed to 1-10: replace the previous 0-9 number cards with 1-10 number cards. Scoring remains the face value for number cards. Update any deck-generation, shuffling, and scoring logic to reflect the new range.
+40.  (Processed) Wild card UX: when the human player chooses to use a wild card, present a modal/popup to select the new active color. Include a Cancel button in that popup so the player can abort using the wild card and return to the hand without playing it. The Cancel option must also be accessible via keyboard and screen readers.
 

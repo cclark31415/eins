@@ -131,7 +131,7 @@
               "name": "What action cards are in the Eins deck?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Eins uses a 114-card four-color deck: red, yellow, green, and blue, each with one 0, one −1, two each of 1-9, and two each of Skip, Reverse, and Draw Two. The deck also contains four Wild cards, four Wild Draw Four cards, and two Wild Draw Six cards. The −1 card lets the player chain another discard on the same turn."
+                "text": "Eins uses a 114-card four-color deck: red, yellow, green, and blue, each with one 10, one −1, two each of 1-9, and two each of Skip, Reverse, and Draw Two. The deck also contains four Wild cards, four Wild Draw Four cards, and two Wild Draw Six cards. The −1 card lets the player chain another discard on the same turn."
               }
             },
             {
@@ -247,13 +247,16 @@
     <div id="toast-layer"></div>
 
     <div class="modal-backdrop hidden" id="color-modal">
-        <div class="modal">
-            <div class="modal-title">Pick a color</div>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="color-modal-title">
+        <div class="modal-title" id="color-modal-title">Pick a color</div>
             <div class="color-choices">
                 <button class="color-btn red" data-color="red" aria-label="Red"></button>
                 <button class="color-btn yellow" data-color="yellow" aria-label="Yellow"></button>
                 <button class="color-btn green" data-color="green" aria-label="Green"></button>
                 <button class="color-btn blue" data-color="blue" aria-label="Blue"></button>
+            </div>
+            <div class="modal-actions">
+              <button class="btn" id="cancel-color" type="button">Cancel</button>
             </div>
         </div>
     </div>

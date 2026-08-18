@@ -5,6 +5,7 @@
 // --- Constants ---
 
 const COLORS = ['red', 'yellow', 'green', 'blue'];
+const HAND_COLOR_ORDER = ['blue', 'green', 'red', 'yellow'];
 const NUM_PLAYERS = 4;
 const HAND_SIZE = 7;
 // Bots wait 2s before each play — their "thinking" time and the window
@@ -72,7 +73,7 @@ function makeCard(color, value) {
 function buildDeck() {
     const deck = [];
     for (const color of COLORS) {
-        deck.push(makeCard(color, '0'));
+        deck.push(makeCard(color, '10'));
         deck.push(makeCard(color, '-1')); // one chain card per color
         for (let n = 1; n <= 9; n++) {
             deck.push(makeCard(color, String(n)));
@@ -360,13 +361,17 @@ function syncEinsFlags(state) {
 
 // --- Bot AI ---
 
-function pickWildColor(hand) {
+function pickWildColor(hand, currentColor = null, avoidCurrentColor = false) {
     const counts = { red: 0, yellow: 0, green: 0, blue: 0 };
     for (const c of hand) {
         if (!isWild(c)) counts[c.color]++;
     }
-    let best = 'red', bestN = -1;
-    for (const c of COLORS) {
+    const preferred = avoidCurrentColor
+        ? COLORS.filter(c => c !== currentColor && counts[c] > 0)
+        : COLORS;
+    const candidates = preferred.length > 0 ? preferred : COLORS;
+    let best = candidates[0] || COLORS[0], bestN = -1;
+    for (const c of candidates) {
         if (counts[c] > bestN) { best = c; bestN = counts[c]; }
     }
     if (bestN === 0) {
@@ -403,7 +408,7 @@ function scoreDefensive(card) {
         default: {
             const n = Number(card.value);
             // Higher numbers are bigger penalty if caught — play them sooner.
-            return 100 - n; // 0 -> 100, 9 -> 91
+            return 100 - n; // 1 -> 99, 10 -> 90
         }
     }
 }
@@ -417,13 +422,20 @@ function botChoosePlay(state, playerIdx) {
     }
     if (playable.length === 0) return null;
 
+    // A simple Wild should not be used merely to re-select the active color
+    // while another legal card is available.
+    const nonWildPlayable = playable.filter(idx => hand[idx].value !== 'wild');
+    const choices = nonWildPlayable.length > 0
+        ? playable.filter(idx => hand[idx].value !== 'wild')
+        : playable;
+
     const strat = state.strategies[playerIdx];
     const scorer = strat === 'offensive' ? scoreOffensive : scoreDefensive;
 
-    let bestIdx = playable[0];
+    let bestIdx = choices[0];
     let bestScore = scorer(hand[bestIdx]);
-    for (let k = 1; k < playable.length; k++) {
-        const idx = playable[k];
+    for (let k = 1; k < choices.length; k++) {
+        const idx = choices[k];
         const s = scorer(hand[idx]);
         if (s > bestScore) { bestIdx = idx; bestScore = s; }
     }
@@ -489,9 +501,9 @@ function cardEl(card, opts = {}) {
     el.classList.add(card.color);
     if (isAction(card)) el.classList.add('action');
 
-    // Number cards 3-9 take an N-gon shape that matches their digit count.
+    // Number cards 3-10 take an N-gon shape that matches their digit count.
     const numValue = Number(card.value);
-    if (!isWild(card) && Number.isInteger(numValue) && numValue >= 3 && numValue <= 9) {
+    if (!isWild(card) && Number.isInteger(numValue) && numValue >= 3 && numValue <= 10) {
         el.classList.add(`shape-${numValue}`);
     }
 
@@ -569,8 +581,21 @@ function renderPlayer() {
     const roundEl = $('round-number');
     if (roundEl) roundEl.textContent = String(state.roundNumber);
 
-    for (let i = 0; i < hand.length; i++) {
-        const c = hand[i];
+    const orderedHand = hand
+        .map((card, originalIndex) => ({ card, originalIndex }))
+        .sort((a, b) => {
+            const aColorOrder = a.card.color === 'wild' ? HAND_COLOR_ORDER.length : HAND_COLOR_ORDER.indexOf(a.card.color);
+            const bColorOrder = b.card.color === 'wild' ? HAND_COLOR_ORDER.length : HAND_COLOR_ORDER.indexOf(b.card.color);
+            const colorOrder = aColorOrder - bColorOrder;
+            if (colorOrder !== 0) return colorOrder;
+            const aNumber = Number(a.card.value);
+            const bNumber = Number(b.card.value);
+            const aValue = Number.isNaN(aNumber) ? 100 : aNumber;
+            const bValue = Number.isNaN(bNumber) ? 100 : bNumber;
+            return aValue - bValue || a.card.value.localeCompare(b.card.value);
+        });
+
+    for (const { card: c, originalIndex } of orderedHand) {
         const el = cardEl(c);
         let playable = false;
         if (isHumanTurn) {
@@ -582,8 +607,18 @@ function renderPlayer() {
             }
         }
         el.classList.add(playable ? 'playable' : 'unplayable');
+        el.setAttribute('aria-label', `${describeCard(c)}${playable ? ', playable' : ', not playable'}`);
+        el.setAttribute('aria-disabled', String(!playable));
         if (playable) {
-            el.addEventListener('click', () => onHumanPlay(i));
+            el.setAttribute('role', 'button');
+            el.tabIndex = 0;
+            el.addEventListener('click', () => onHumanPlay(originalIndex));
+            el.addEventListener('keydown', event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onHumanPlay(originalIndex);
+                }
+            });
         }
         handEl.appendChild(el);
     }
@@ -1079,7 +1114,9 @@ function doBotTurn() {
             showToast('Eins!', 'yellow');
         }
         let chosenColor = null;
-        if (isWild(card)) chosenColor = pickWildColor(state.hands[seat]);
+        if (isWild(card)) {
+            chosenColor = pickWildColor(state.hands[seat], state.currentColor, card.value === 'wild');
+        }
         const handArea = $(`hand-${seat}`);
         const srcRect = rectOf(handArea);
         const flightCard = isWild(card) ? { ...card, color: chosenColor } : card;
@@ -1135,7 +1172,9 @@ function doBotTurn() {
                         showToast('Eins!', 'yellow');
                     }
                     let chosenColor = null;
-                    if (isWild(drawn)) chosenColor = pickWildColor(state.hands[seat]);
+                    if (isWild(drawn)) {
+                        chosenColor = pickWildColor(state.hands[seat], state.currentColor, drawn.value === 'wild');
+                    }
                     const handArea = $(`hand-${seat}`);
                     const srcRect = rectOf(handArea);
                     const flightCard = isWild(drawn) ? { ...drawn, color: chosenColor } : drawn;
@@ -1183,7 +1222,24 @@ function chainNextTurn() {
 // --- Modals & buttons ---
 
 function showColorModal(show = true) {
-    $('color-modal').classList.toggle('hidden', !show);
+    const modal = $('color-modal');
+    modal.classList.toggle('hidden', !show);
+    if (show) {
+        $('cancel-color').focus();
+    }
+}
+
+function cancelWildPlay() {
+    state.awaitingColor = false;
+    state.pendingWildPlay = null;
+    showColorModal(false);
+    humanInputLocked = false;
+    render();
+    const card = state.hands[0].find(c => isWild(c));
+    if (card) {
+        const cardElInHand = [...$('hand-0').children].find(el => el.getAttribute('aria-label')?.startsWith(describeCard(card)));
+        if (cardElInHand) cardElInHand.focus();
+    }
 }
 
 function showResultModal(title, body) {
@@ -1262,6 +1318,13 @@ function attachEvents() {
     $('draw-pile').addEventListener('click', onHumanDraw);
     $('eins-button').addEventListener('click', onHumanCallEins);
     $('challenge-button').addEventListener('click', onHumanChallenge);
+    $('cancel-color').addEventListener('click', cancelWildPlay);
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !$('color-modal').classList.contains('hidden')) {
+            event.preventDefault();
+            cancelWildPlay();
+        }
+    });
     document.querySelectorAll('.color-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const color = btn.dataset.color;
