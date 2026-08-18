@@ -33,3 +33,8 @@
 32.  Instead of recommending a challenge, there should be a two second pause for the bot players before the next player lays down their cards.  The bot players can think during this period, but there will always be a pause so any player can catch the player that did not call Eins
 33.  The deck includes a −1 card — one per color. After playing a −1, the same player gets to discard another card on top of it (a chain). The chained card must follow normal rules (match the −1's color or value, or be a wild). Chains may continue if the next card is also a −1. The −1 scores 20 points if held at round end (same as Skip/Reverse/Draw Two).
 34.  The deck includes a Wild Draw Six card — two of them, both wild. When played, the player picks a new active color and the next player draws six cards and loses their turn. It scores 50 points if held at round end (same as other wild cards). On the opening flip the Wild Draw Six is returned to the deck and another card is drawn (same rule as Wild Draw Four).
+35.  The bot players should not lay down a simple wild card to change the color to the currently selected color unless it has no other choice.
+36.  The human player's cards should highlight all eligible cards to play.
+37.  The human player's cards should be grouped by color in incrementing order.
+38.  Update to the card deck:  Instead of number cards 0-9, they should be 1-10 with the point value still being the face value.
+39.  If the human player chooses to use a wild card, have a Cancel button in the popup so they can change their mind about using the wild card.
