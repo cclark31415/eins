@@ -607,6 +607,7 @@ function renderPlayer() {
             }
         }
         el.classList.add(playable ? 'playable' : 'unplayable');
+        el.dataset.cardId = String(c.id);
         el.setAttribute('aria-label', `${describeCard(c)}${playable ? ', playable' : ', not playable'}`);
         el.setAttribute('aria-disabled', String(!playable));
         if (playable) {
@@ -622,6 +623,10 @@ function renderPlayer() {
         }
         handEl.appendChild(el);
     }
+}
+
+function humanCardElement(card) {
+    return [...$('hand-0').children].find(el => el.dataset.cardId === String(card.id)) || null;
 }
 
 function renderDiscard() {
@@ -852,7 +857,7 @@ function onHumanPlay(cardIdx) {
     if (!canPlay(card, top, state.currentColor)) return;
     if (state.drewThisTurn && card.id !== state.drawnCardId) return;
 
-    const cardElInHand = $('hand-0').children[cardIdx];
+    const cardElInHand = humanCardElement(card);
     const srcRect = cardElInHand ? rectOf(cardElInHand) : rectOf($('hand-0'));
 
     if (isWild(card)) {
@@ -1334,7 +1339,7 @@ function attachEvents() {
                 state.pendingWildPlay = null;
                 state.awaitingColor = false;
                 const card = state.hands[0][cardIdx];
-                const cardElInHand = $('hand-0').children[cardIdx];
+                const cardElInHand = humanCardElement(card);
                 const srcRect = cardElInHand ? rectOf(cardElInHand) : rectOf($('hand-0'));
                 if (cardElInHand) cardElInHand.style.visibility = 'hidden';
                 humanInputLocked = true;
