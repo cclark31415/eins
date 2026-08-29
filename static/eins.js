@@ -102,8 +102,14 @@ function shuffle(arr) {
     return arr;
 }
 
+// Values that are wild no matter what colour is currently painted on the
+// card. isWild() derives wildness from c.color, so a recycled wild that kept
+// a chosen colour would silently stop being treated as wild — see drawOne().
+const WILD_VALUES = ['wild', 'wild4', 'wild6'];
+
 const isWild = (c) => c.color === 'wild';
-const isAction = (c) => ['skip', 'reverse', 'draw2', 'wild', 'wild4', 'wild6', '-1'].includes(c.value);
+const isAction = (c) => WILD_VALUES.includes(c.value)
+    || ['skip', 'reverse', 'draw2', '-1'].includes(c.value);
 
 function canPlay(card, top, currentColor) {
     if (isWild(card)) return true;
@@ -135,13 +141,10 @@ function drawOne(state) {
     if (state.deck.length === 0) {
         if (state.discardPile.length <= 1) return null;
         const top = state.discardPile.pop();
-        const recycled = state.discardPile.map(c => {
-            // Reset wild cards back to their wild color when recycled.
-            if (c.value === 'wild' || c.value === 'wild4') {
-                return { ...c, color: 'wild' };
-            }
-            return c;
-        });
+        // Reset every wild back to the wild colour when recycled, so a wild
+        // can never come back out of the deck wearing a played colour.
+        const recycled = state.discardPile.map(c =>
+            WILD_VALUES.includes(c.value) ? { ...c, color: 'wild' } : c);
         state.discardPile = [top];
         state.deck = shuffle(recycled);
         state.reshufflePending = true;
@@ -606,15 +609,10 @@ function renderPlayer() {
 
     for (const { card: c, originalIndex } of orderedHand) {
         const el = cardEl(c);
-        let playable = false;
-        if (isHumanTurn) {
-            if (state.drewThisTurn) {
-                // After a draw, only the drawn card may be played.
-                playable = c.id === state.drawnCardId && canPlay(c, top, state.currentColor);
-            } else {
-                playable = canPlay(c, top, state.currentColor);
-            }
-        }
+        // Drawing does not restrict what you may play. If you draw a card you
+        // would rather hold (say a Wild Draw Six), you can still play any
+        // other legal card in hand and keep it.
+        const playable = isHumanTurn && canPlay(c, top, state.currentColor);
         el.classList.add(playable ? 'playable' : 'unplayable');
         el.dataset.cardId = String(c.id);
         el.setAttribute('aria-label', `${describeCard(c)}${playable ? ', playable' : ', not playable'}`);
@@ -864,7 +862,6 @@ function onHumanPlay(cardIdx) {
     const card = state.hands[0][cardIdx];
     const top = topCard(state);
     if (!canPlay(card, top, state.currentColor)) return;
-    if (state.drewThisTurn && card.id !== state.drawnCardId) return;
 
     const cardElInHand = humanCardElement(card);
     const srcRect = cardElInHand ? rectOf(cardElInHand) : rectOf($('hand-0'));
@@ -884,6 +881,7 @@ function onHumanPlay(cardIdx) {
 }
 
 function finalizeHumanPlay(cardIdx, chosenColor) {
+    showEndTurnButton(false);
     const card = state.hands[0][cardIdx];
     const result = executePlay(state, 0, cardIdx, chosenColor);
     logEvent(state, describePlay(0, card, result, chosenColor));
@@ -909,13 +907,16 @@ async function onHumanDraw() {
     syncEinsFlags(state);
     logEvent(state, `You drew a card.`);
     const top = topCard(state);
-    const playable = canPlay(c, top, state.currentColor);
+    const drawnPlayable = canPlay(c, top, state.currentColor);
+    const anyPlayable = state.hands[0].some(card => canPlay(card, top, state.currentColor));
     render();
-    if (playable) {
-        renderStatus(`Drew ${describeCard(c)}. Play it or end your turn.`);
+    if (anyPlayable) {
+        renderStatus(drawnPlayable
+            ? `Drew ${describeCard(c)}. Play any highlighted card, or end your turn.`
+            : `Drew ${describeCard(c)} — not playable. Play another highlighted card, or end your turn.`);
         showEndTurnButton(true);
     } else {
-        renderStatus(`Drew ${describeCard(c)}. Cannot play — passing.`);
+        renderStatus(`Drew ${describeCard(c)}. Nothing playable — passing.`);
         humanInputLocked = true;
         setTimeout(() => {
             humanInputLocked = false;
@@ -925,6 +926,9 @@ async function onHumanDraw() {
 }
 
 function endHumanTurn() {
+    // Defensive: the button is hidden on every exit path, but never let a
+    // stale click advance play out of turn.
+    if (state.currentPlayer !== 0 || state.gameOver) { showEndTurnButton(false); return; }
     state.drewThisTurn = false;
     state.drawnCardId = null;
     advance(state);

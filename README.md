@@ -143,8 +143,11 @@ deployed, deploy the landing page from its own repo (the change is in
 
 1. On your turn, play a card matching the top of the discard pile by color
    or number/symbol. Wilds are always playable.
-2. If you have no playable card, click the draw pile. The drawn card may
-   be played if it's playable; otherwise your turn ends.
+2. You may click the draw pile at any point on your turn, even if you
+   already hold a playable card. After drawing, every legal card in your
+   hand stays highlighted and selectable — including cards you held before
+   drawing — so you can play one of those and hold on to the card you just
+   drew. If nothing in your hand is playable, your turn ends automatically.
 3. Action cards: **Skip** = next player loses turn; **Reverse** = direction
    flips; **Draw Two** = next player draws 2 and is skipped; **Wild** =
    pick a color; **Wild Draw Four** = pick a color, next player draws 4 and
@@ -161,7 +164,7 @@ deployed, deploy the landing page from its own repo (the change is in
 
 | Version | Highlights |
 |---------|-----------|
-| 0.10.5  | Responsive layout fix — playfield locked to one viewport (`svh`) so the hand and the Eins / Challenge buttons are always visible at scroll-top; side opponents' fans reserve a fixed height so the table no longer grows and shrinks as bot hands change; card size and fan overlap derived from `--card-h`; progressive `--fan-max` tiers (7 → 5 → 3) plus a compact tier for short viewports and a landscape tier that drops opponents' card backs; play log moved below the fold; `renderOpponent` reads `--fan-max` from CSS; debounced re-render on resize / orientation change. |
+| 0.10.5  | Responsive layout fix — playfield locked to one viewport (`svh`) so the hand and the Eins / Challenge buttons are always visible at scroll-top; side opponents' fans reserve a fixed height so the table no longer grows and shrinks as bot hands change; card size and fan overlap derived from `--card-h`; progressive `--fan-max` tiers (7 → 5 → 3) plus a compact tier for short viewports and a landscape tier that drops opponents' card backs; play log moved below the fold; `renderOpponent` reads `--fan-max` from CSS; debounced re-render on resize / orientation change. Drawing no longer restricts your play — every legal card stays highlighted and selectable after a draw, so you can play a card you already held and keep the one you drew; the turn only auto-passes when nothing in hand is playable. End Turn button is now cleared when you play after drawing (previously it stayed live during the bots' turns). All three wild values reset to the wild colour on reshuffle via a shared `WILD_VALUES` constant — `wild6` was previously omitted. |
 | 0.10.4  | Deck change — the `0` card is gone, replaced by a single `10` per color (still 114 cards); polygon shapes extended to 10 (decagon). Bots no longer play a simple Wild just to re-select the active color. Playable cards in your hand are highlighted, with keyboard `:focus-visible` styling. Hand grouped by color and sorted ascending. Cancel button added to the wild color picker. Card-flight animations track a stable `cardId` instead of a hand index, so they follow the right card after the hand re-sorts. |
 | 0.10.3  | Draw / discard pile counts under each pile, with a reshuffle indicator. First public release of the repository. |
 | 0.9.x – 0.10.2 | Predate this repository's public history — see the private deployment notes. |
