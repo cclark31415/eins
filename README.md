@@ -7,7 +7,7 @@ Live at **https://eins.chrisclark.net/**.
 
 ## Features
 
-- 114-card deck: 4 colors × (0, −1, two each of 1–9, two each of Skip /
+- 114-card deck: 4 colors × (10, −1, two each of 1–9, two each of Skip /
   Reverse / Draw Two), plus 4 Wild, 4 Wild Draw Four, and 2 Wild Draw Six.
   The **−1 card** (one per color) is a chain card — play another card on top
   of it on the same turn.
@@ -31,8 +31,8 @@ Live at **https://eins.chrisclark.net/**.
   tournament; each subsequent round rotates one seat clockwise.
 - **Reverse cards** only flip play direction when actually played by a
   player — the opening flip never reverses direction.
-- **Polygon shapes** for number cards 3 – 9 (triangle, diamond, pentagon,
-  hexagon, heptagon, octagon, nonagon) drawn via CSS `clip-path`.
+- **Polygon shapes** for number cards 3 – 10 (triangle, diamond, pentagon,
+  hexagon, heptagon, octagon, nonagon, decagon) drawn via CSS `clip-path`.
 - **Card-flight animations** on plays and draws; per-action toasts on Skip,
   Reverse, Draw 2, Draw 4.
 - **Prominent active color** indicator + a clockwise/counter-clockwise arrow
@@ -161,6 +161,10 @@ deployed, deploy the landing page from its own repo (the change is in
 
 | Version | Highlights |
 |---------|-----------|
+| 0.10.5  | Responsive layout fix — playfield locked to one viewport (`svh`) so the hand and the Eins / Challenge buttons are always visible at scroll-top; side opponents' fans reserve a fixed height so the table no longer grows and shrinks as bot hands change; card size and fan overlap derived from `--card-h`; progressive `--fan-max` tiers (7 → 5 → 3) plus a compact tier for short viewports and a landscape tier that drops opponents' card backs; play log moved below the fold; `renderOpponent` reads `--fan-max` from CSS; debounced re-render on resize / orientation change. |
+| 0.10.4  | Deck change — the `0` card is gone, replaced by a single `10` per color (still 114 cards); polygon shapes extended to 10 (decagon). Bots no longer play a simple Wild just to re-select the active color. Playable cards in your hand are highlighted, with keyboard `:focus-visible` styling. Hand grouped by color and sorted ascending. Cancel button added to the wild color picker. Card-flight animations track a stable `cardId` instead of a hand index, so they follow the right card after the hand re-sorts. |
+| 0.10.3  | Draw / discard pile counts under each pile, with a reshuffle indicator. First public release of the repository. |
+| 0.9.x – 0.10.2 | Predate this repository's public history — see the private deployment notes. |
 | 0.8.0   | Challenge button arms regardless of seat (race bots during their pause); bad challenge = 6 cards + lose turn (queued via `skipNextTurn`). |
 | 0.7.x   | Center direction icon; play log under hand (newest first); 2 s pre-turn pause for bots only; richer log entries with target player. |
 | 0.6.x   | Major SEO pass — JSON-LD `@graph` (Game / WebApplication / WebSite / FAQPage / BreadcrumbList), Open Graph + Twitter card meta with og-image, `manifest.json`, `robots.txt`, `sitemap.xml`, visible "How to play" content, `<noscript>` fallback. |

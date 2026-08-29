@@ -168,6 +168,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='eins.css') }}">
 </head>
 <body>
+    <div class="board">
     <header class="topbar">
         <a class="site-logo" href="https://chrisclark.net/" aria-label="chrisclark.net home">
             <img src="{{ url_for('static', filename='CC_Mountain.jpg') }}" alt="" width="320" height="175">
@@ -237,12 +238,15 @@
                 <button id="eins-button" class="btn">Eins!</button>
                 <button id="challenge-button" class="btn">Challenge</button>
             </div>
-            <section class="play-log" aria-label="Play log">
-                <div class="play-log-title">Play log</div>
-                <div class="play-log-list" id="play-log"></div>
-            </section>
         </section>
+
     </main>
+    </div>
+
+    <section class="play-log" aria-label="Play log">
+        <div class="play-log-title">Play log</div>
+        <div class="play-log-list" id="play-log"></div>
+    </section>
 
     <div id="toast-layer"></div>
 

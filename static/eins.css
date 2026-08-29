@@ -16,16 +16,75 @@
     --green: #2FA34A;
     --blue: #2467D6;
 
-    --card-w: 78px;
-    --card-h: 116px;
+    /* Card height drives everything else: width, the vertical fan overlap,
+       and therefore the height of the side opponents' hands. --card-cap is
+       the width-tier maximum; the svh term shrinks cards on short viewports
+       so the player's hand and buttons stay above the fold. */
+    --card-cap: 116px;
+    --card-h: min(var(--card-cap), 10.5svh);
+    --card-w: calc(var(--card-h) * 0.672);
     --card-radius: 10px;
+
+    /* Vertical distance gained per extra card in a side opponent's fan. */
+    --fan-step: calc(var(--card-h) * 0.26);
+    /* Card backs drawn per hand. Also read by renderOpponent() in eins.js,
+       so the reserved height and the rendered count can never disagree. */
+    --fan-max: 7;
 }
 
 @media (max-width: 720px) {
-    :root { --card-w: 58px; --card-h: 86px; }
+    :root { --card-cap: 86px; }
+}
+
+/* Short viewports: shorten the side fans before shrinking cards further. */
+@media (max-height: 820px) {
+    .opponent-hand.vertical { --fan-max: 5; }
+}
+@media (max-height: 700px) {
+    .opponent-hand.vertical { --fan-max: 3; }
+
+    .table { padding: 10px; gap: 8px; }
+    .opponents { gap: 8px; }
+    .opponent { padding: 4px; }
+    .status-bar { padding: 2px; min-height: 18px; font-size: 13px; }
+
+    /* Centre column: drop the arrow caption and tighten the colour pill. */
+    .center { gap: 4px; }
+    .direction-arrow { margin-bottom: 0; }
+    .direction-arrow .arrow-glyph { font-size: 26px; }
+    .direction-arrow .arrow-label { display: none; }
+    .current-color { padding: 5px 14px; font-size: 14px; letter-spacing: 2px; }
+    .current-color .swatch { width: 16px; height: 16px; }
+    .pile-label { display: none; }
+
+    .player { gap: 6px; }
+    .player-hand { padding: 6px; min-height: calc(var(--card-h) + 12px); }
+    .player-actions { min-height: 32px; margin-top: 0; }
+}
+
+/* Landscape phones: there is no room for opponents' card backs at all, so
+   drop the fans and let the "N cards" counters carry that information. */
+@media (max-height: 520px) {
+    .opponent-hand { display: none; }
+    .topbar { padding: 6px 12px; }
+    .opponent-name, .opponent-meta { font-size: 11px; }
+    .center { gap: 2px; }
+    .current-color { padding: 4px 12px; }
 }
 
 html, body { height: 100%; }
+
+/* Topbar + table occupy exactly one viewport, so the player's hand and the
+   Eins / Challenge buttons are always visible at scroll-top. Uses svh (the
+   *smallest* viewport height) so an expanded mobile browser chrome can't
+   push the buttons under. Everything below .board (play log, About, footer)
+   is free to flow past the fold. */
+.board {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100svh;
+}
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -141,9 +200,14 @@ body {
 }
 
 .table {
-    flex: 1;
+    flex: 1 1 auto;
+    /* Without this a flex item refuses to shrink below its content height,
+       which is what pushed .player off-screen. */
+    min-height: 0;
     display: grid;
-    grid-template-rows: auto auto auto;
+    /* Opponents take the slack; status bar and player are sized to content
+       and therefore always land inside the viewport. */
+    grid-template-rows: minmax(0, 1fr) auto auto;
     gap: 12px;
     padding: 16px;
     max-width: 1100px;
@@ -154,7 +218,10 @@ body {
 .opponents {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: 14px;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .opponent-row {
@@ -200,20 +267,23 @@ body {
     flex-wrap: nowrap;
     justify-content: center;
 }
-.opponent-hand .card { margin-left: -42px; }
+.opponent-hand .card { flex: 0 0 auto; margin-left: calc(var(--card-w) * -0.54); }
 .opponent-hand .card:first-child { margin-left: 0; }
 
-.opponent-hand.vertical { flex-direction: column; }
-.opponent-hand.vertical .card { margin-left: 0; margin-top: -88px; }
-.opponent-hand.vertical .card:first-child { margin-top: 0; }
-
-/* On phones the card shrinks (--card-h: 86px) but the desktop margin
-   (-88px) exceeds it, flipping the fan upward into the name/score area.
-   Use overlaps that always leave a visible strip below each card. */
-@media (max-width: 720px) {
-    .opponent-hand .card { margin-left: -38px; }
-    .opponent-hand.vertical .card { margin-top: -64px; }
+/* Side hands reserve the full --fan-max height at all times. A bot going
+   from 1 card to 7 no longer changes the table's height, so the board stops
+   growing and shrinking under the player. Overlap is derived from --card-h,
+   so it can never exceed the card and flip the fan upward. */
+.opponent-hand.vertical {
+    flex-direction: column;
+    justify-content: flex-start;
+    height: calc(var(--card-h) + (var(--fan-max) - 1) * var(--fan-step));
 }
+.opponent-hand.vertical .card {
+    margin-left: 0;
+    margin-top: calc(var(--fan-step) - var(--card-h));
+}
+.opponent-hand.vertical .card:first-child { margin-top: 0; }
 
 .center {
     display: flex;
@@ -726,9 +796,9 @@ body {
 
 /* Play log under the human's hand */
 .play-log {
-    width: 100%;
+    width: calc(100% - 32px);
     max-width: 600px;
-    margin: 8px auto 0;
+    margin: 12px auto 16px;
     padding: 10px 14px 12px;
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid var(--border);

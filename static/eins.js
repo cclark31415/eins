@@ -535,6 +535,13 @@ function cardEl(card, opts = {}) {
     return el;
 }
 
+// Cards drawn per opponent hand, from the --fan-max custom property.
+function fanMax(handEl) {
+    const raw = getComputedStyle(handEl).getPropertyValue('--fan-max');
+    const n = parseInt(raw, 10);
+    return Number.isFinite(n) && n > 0 ? n : 7;
+}
+
 function renderOpponent(seat) {
     const handEl = $(`hand-${seat}`);
     const countEl = $(`count-${seat}`);
@@ -545,8 +552,10 @@ function renderOpponent(seat) {
     countEl.textContent = String(n);
     if (scoreEl) scoreEl.textContent = String(state.tournamentScores[seat]);
     if (nameEl) nameEl.textContent = playerName(seat);
-    // Show up to 7 card backs as a fan.
-    const shown = Math.min(n, 7);
+    // Show a fan of card backs, capped at --fan-max. The cap lives in CSS
+    // because CSS also reserves the fan's height from it; reading it back
+    // here keeps the rendered count and the reserved space in agreement.
+    const shown = Math.min(n, fanMax(handEl));
     for (let i = 0; i < shown; i++) {
         handEl.appendChild(cardEl(null, { faceDown: true }));
     }
@@ -1318,6 +1327,14 @@ function startNextRound() {
 }
 
 function attachEvents() {
+    // --fan-max changes at viewport breakpoints, so re-render on resize and
+    // orientation change to keep the fans matching the space CSS reserved.
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => { if (state) render(); }, 150);
+    });
+
     $('new-game').addEventListener('click', startNewGame);
     $('result-new-game').addEventListener('click', startNextRound);
     $('draw-pile').addEventListener('click', onHumanDraw);
