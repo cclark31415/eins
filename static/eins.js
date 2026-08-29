@@ -35,6 +35,7 @@ const TOAST_LABELS = {
 // Probability a bot remembers to call Eins on its penultimate play.
 const BOT_EINS_REMEMBER = 0.7;
 
+
 // Pool of bot names — multicultural, Latin-character spellings only.
 const BOT_NAME_POOL = [
     'Aiko', 'Akira', 'Hiroshi', 'Yuki', 'Sora',
@@ -378,8 +379,10 @@ function pickWildColor(hand, currentColor = null, avoidCurrentColor = false) {
         if (counts[c] > bestN) { best = c; bestN = counts[c]; }
     }
     if (bestN === 0) {
-        // No colored cards — pick random.
-        return COLORS[Math.floor(Math.random() * 4)];
+        // No colored cards to steer by — pick at random, but still honour the
+        // "don't re-select the active color" rule.
+        const pool = avoidCurrentColor ? COLORS.filter(c => c !== currentColor) : COLORS;
+        return pool[Math.floor(Math.random() * pool.length)];
     }
     return best;
 }
@@ -414,6 +417,16 @@ function scoreDefensive(card) {
             return 100 - n; // 1 -> 99, 10 -> 90
         }
     }
+}
+
+// Spending a wild without changing the active color only pays off when
+// there is something urgent to answer — an opponent one or two cards from
+// going out, where landing the draw penalty matters more than the color.
+function opponentAboutToWin(state, playerIdx) {
+    for (let p = 0; p < NUM_PLAYERS; p++) {
+        if (p !== playerIdx && state.hands[p].length <= 2) return true;
+    }
+    return false;
 }
 
 function botChoosePlay(state, playerIdx) {
@@ -1133,7 +1146,8 @@ function doBotTurn() {
         }
         let chosenColor = null;
         if (isWild(card)) {
-            chosenColor = pickWildColor(state.hands[seat], state.currentColor, card.value === 'wild');
+            chosenColor = pickWildColor(state.hands[seat], state.currentColor,
+                !opponentAboutToWin(state, seat));
         }
         const handArea = $(`hand-${seat}`);
         const srcRect = rectOf(handArea);
@@ -1191,7 +1205,8 @@ function doBotTurn() {
                     }
                     let chosenColor = null;
                     if (isWild(drawn)) {
-                        chosenColor = pickWildColor(state.hands[seat], state.currentColor, drawn.value === 'wild');
+                        chosenColor = pickWildColor(state.hands[seat], state.currentColor,
+                            !opponentAboutToWin(state, seat));
                     }
                     const handArea = $(`hand-${seat}`);
                     const srcRect = rectOf(handArea);
