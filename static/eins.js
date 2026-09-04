@@ -551,7 +551,8 @@ function cardEl(card, opts = {}) {
     return el;
 }
 
-// Cards drawn per opponent hand, from the --fan-max custom property.
+// Cards drawn per opponent hand, from the --fan-max custom property. It is
+// declared on :root (the card-size budget reads it too) and inherited here.
 function fanMax(handEl) {
     const raw = getComputedStyle(handEl).getPropertyValue('--fan-max');
     const n = parseInt(raw, 10);
@@ -569,8 +570,8 @@ function renderOpponent(seat) {
     if (scoreEl) scoreEl.textContent = String(state.tournamentScores[seat]);
     if (nameEl) nameEl.textContent = playerName(seat);
     // Show a fan of card backs, capped at --fan-max. The cap lives in CSS
-    // because CSS also reserves the fan's height from it; reading it back
-    // here keeps the rendered count and the reserved space in agreement.
+    // because CSS also sizes the cards around it; reading it back here keeps
+    // the rendered count and the space reserved for it in agreement.
     const shown = Math.min(n, fanMax(handEl));
     for (let i = 0; i < shown; i++) {
         handEl.appendChild(cardEl(null, { faceDown: true }));
