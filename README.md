@@ -26,6 +26,9 @@ Live at **https://eins.chrisclark.net/**.
     card) cost the challenger six cards **and** their next turn.
   - Bots think for 2 seconds before each play — that's the window during
     which the human can race a bot to a missed-Eins challenge.
+- **Double Match**: playing a card that matches both the active color and the
+  previous card's value/type lets you play another legal card on the same
+  turn. Card effects still apply.
 - **Tournament scoring**: number cards = face value; Skip / Reverse /
   Draw Two / −1 = 20 each; Wild / Wild Draw Four / Wild Draw Six = 50
   each. First to 500 wins.
@@ -146,20 +149,24 @@ deployed, deploy the landing page from its own repo (the change is in
 
 1. On your turn, play a card matching the top of the discard pile by color
    or number/symbol. Wilds are always playable.
-2. You may click the draw pile at any point on your turn, even if you
+2. If your card matches both the active color and the top card's value/type,
+   it is a **Double Match** and you may play another legal card immediately.
+   The extra card must follow the normal matching rules; any effects from
+   the first card still apply.
+3. You may click the draw pile at any point on your turn, even if you
    already hold a playable card. After drawing, every legal card in your
    hand stays highlighted and selectable — including cards you held before
    drawing — so you can play one of those and hold on to the card you just
    drew. If nothing in your hand is playable, your turn ends automatically.
-3. Action cards: **Skip** = next player loses turn; **Reverse** = direction
+4. Action cards: **Skip** = next player loses turn; **Reverse** = direction
    flips; **Draw Two** = next player draws 2 and is skipped; **Wild** =
    pick a color; **Wild Draw Four** = pick a color, next player draws 4 and
    is skipped.
-4. When you have two cards and are about to play your penultimate card,
+5. When you have two cards and are about to play your penultimate card,
    press **Eins!**. Forget, and any other player can press **Challenge**
    (six-card penalty). Bad challenges cost the challenger six cards and
    their next turn.
-5. The first to discard their last card wins the round and collects points
+6. The first to discard their last card wins the round and collects points
    from the other players' remaining cards. First to 500 wins the
    tournament.
 
@@ -167,6 +174,7 @@ deployed, deploy the landing page from its own repo (the change is in
 
 | Version | Highlights |
 |---------|-----------|
+| 0.10.7  | Added Double Match: a card matching both the active color and previous card's value/type grants another legal play; bots prefer Double Match cards when available, and action-card skips are applied after the bonus play. |
 | 0.10.6  | Foldable phone layout. An unfolded Pixel Fold / Galaxy Z Fold inner screen is near-square — wide enough to miss the `max-width: 720px` phone tier but far too short for the wide layout's vertical budget — so the table overran the fixed-height `.opponents` box and its `overflow: hidden` cut the top bot's name off above and sliced the colour pill in half below. New tier keyed on viewport *shape* (≥600px wide, aspect ratio between 4:5 and 8:5) rather than on device: side opponents fan sideways, so a side seat stands one card tall instead of `--fan-max` cards; the table caps narrower than the screen so the three seats close into a triangle around the pile; and each side seat's highlight hugs its own hand. Cards come out ~25% larger than the short-viewport tier managed. Root cause of the clipping, which affected every short viewport and not just folds: the `max-height` tiers sat **above** the base rules in the stylesheet, and since a media query adds no specificity, every declaration that collided with a base rule lost on source order — the compact and landscape tiers were almost entirely dead. Tiers now live at the end of the file and express sizes as `:root` custom-property overrides, which cannot be silently reordered away. Card height is now solved from the vertical budget (`--chrome-fan` / `--chrome-mid`, `--fan-mult`, `--hand-rows`) instead of a flat `svh` fraction that ignored fixed chrome; the middle row is the taller of the side fans and the centre column, so both constraints are applied and the smaller card wins. Verified clip-free across 20 viewports from 360×640 to 1600×1000. Card internals — frame, corner indices, rounding, inner padding — are now fractions of `--card-w` rather than fixed pixels, so cards keep their proportions at every size instead of looking heavier as they shrink. `--fan-max` moved to `:root` so the budget can read it; `renderOpponent` still inherits it. Contact link added to the page footer. |
 | 0.10.5  | Responsive layout fix — playfield locked to one viewport (`svh`) so the hand and the Eins / Challenge buttons are always visible at scroll-top; side opponents' fans reserve a fixed height so the table no longer grows and shrinks as bot hands change; card size and fan overlap derived from `--card-h`; progressive `--fan-max` tiers (7 → 5 → 3) plus a compact tier for short viewports and a landscape tier that drops opponents' card backs; play log moved below the fold; `renderOpponent` reads `--fan-max` from CSS; debounced re-render on resize / orientation change. Drawing no longer restricts your play — every legal card stays highlighted and selectable after a draw, so you can play a card you already held and keep the one you drew; the turn only auto-passes when nothing in hand is playable. End Turn button is now cleared when you play after drawing (previously it stayed live during the bots' turns). All three wild values reset to the wild colour on reshuffle via a shared `WILD_VALUES` constant — `wild6` was previously omitted. Bot wild colour policy now covers **all** wilds: 0.10.4 only applied the "don't re-select the active colour" rule to the simple Wild, so Wild Draw Four / Six still kept the colour ~10% of the time. Bots may now leave the colour unchanged only when an opponent is down to two cards or fewer, or when every coloured card they hold is already the active colour. |
 | 0.10.4  | Deck change — the `0` card is gone, replaced by a single `10` per color (still 114 cards); polygon shapes extended to 10 (decagon). Bots no longer play a simple Wild just to re-select the active color. Playable cards in your hand are highlighted, with keyboard `:focus-visible` styling. Hand grouped by color and sorted ascending. Cancel button added to the wild color picker. Card-flight animations track a stable `cardId` instead of a hand index, so they follow the right card after the hand re-sorts. |

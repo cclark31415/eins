@@ -117,12 +117,23 @@ function canPlay(card, top, currentColor) {
     return card.color === currentColor || card.value === top.value;
 }
 
+function isDoubleMatch(card, top, currentColor) {
+    return !isWild(card) && card.color === currentColor && card.value === top.value;
+}
+
 function topCard(state) {
     return state.discardPile[state.discardPile.length - 1];
 }
 
 function advance(state) {
     state.currentPlayer = (state.currentPlayer + state.direction + NUM_PLAYERS) % NUM_PLAYERS;
+}
+
+function advanceAfterTurn(state) {
+    const skippedTurns = state.pendingTurnSkips;
+    state.pendingTurnSkips = 0;
+    advance(state);
+    for (let i = 0; i < skippedTurns; i++) advance(state);
 }
 
 const CARD_VALUES = {
@@ -207,6 +218,7 @@ function newGame(prev = null) {
         direction: 1,
         currentPlayer: startingPlayer,
         startingPlayer,
+        pendingTurnSkips: 0,
         strategies: [null,
             Math.random() < 0.5 ? 'offensive' : 'defensive',
             Math.random() < 0.5 ? 'offensive' : 'defensive',
@@ -287,6 +299,7 @@ function endRound(state) {
 
 function executePlay(state, playerIdx, cardIdx, chosenColor) {
     const card = state.hands[playerIdx].splice(cardIdx, 1)[0];
+    const doubleMatch = isDoubleMatch(card, topCard(state), state.currentColor);
     state.discardPile.push(card);
     state.lastActor = playerIdx;
 
@@ -311,8 +324,8 @@ function executePlay(state, playerIdx, cardIdx, chosenColor) {
     let playAgain = false;
     switch (card.value) {
         case 'skip':
-            advance(state); // skipped player
-            victim = state.currentPlayer;
+            state.pendingTurnSkips++;
+            victim = (playerIdx + state.direction + NUM_PLAYERS) % NUM_PLAYERS;
             effect = 'skip';
             break;
         case 'reverse':
@@ -320,24 +333,24 @@ function executePlay(state, playerIdx, cardIdx, chosenColor) {
             effect = 'reverse';
             break;
         case 'draw2':
-            advance(state);
-            victim = state.currentPlayer;
-            drawN(state, state.currentPlayer, 2);
-            animateDrawN(state.currentPlayer, 2);
+            victim = (playerIdx + state.direction + NUM_PLAYERS) % NUM_PLAYERS;
+            state.pendingTurnSkips++;
+            drawN(state, victim, 2);
+            animateDrawN(victim, 2);
             effect = 'draw2';
             break;
         case 'wild4':
-            advance(state);
-            victim = state.currentPlayer;
-            drawN(state, state.currentPlayer, 4);
-            animateDrawN(state.currentPlayer, 4);
+            victim = (playerIdx + state.direction + NUM_PLAYERS) % NUM_PLAYERS;
+            state.pendingTurnSkips++;
+            drawN(state, victim, 4);
+            animateDrawN(victim, 4);
             effect = 'wild4';
             break;
         case 'wild6':
-            advance(state);
-            victim = state.currentPlayer;
-            drawN(state, state.currentPlayer, 6);
-            animateDrawN(state.currentPlayer, 6);
+            victim = (playerIdx + state.direction + NUM_PLAYERS) % NUM_PLAYERS;
+            state.pendingTurnSkips++;
+            drawN(state, victim, 6);
+            animateDrawN(victim, 6);
             effect = 'wild6';
             break;
         case 'wild':
@@ -350,9 +363,10 @@ function executePlay(state, playerIdx, cardIdx, chosenColor) {
             break;
     }
 
+    if (doubleMatch) playAgain = true;
     syncEinsFlags(state);
-    if (!playAgain) advance(state);
-    return { card, effect, victim, playAgain };
+    if (!playAgain) advanceAfterTurn(state);
+    return { card, effect, victim, playAgain, doubleMatch };
 }
 
 // Eins flags persist while a player is at 1-2 cards; they're cleared once
@@ -450,10 +464,17 @@ function botChoosePlay(state, playerIdx) {
 
     let bestIdx = choices[0];
     let bestScore = scorer(hand[bestIdx]);
+    let bestIsDoubleMatch = isDoubleMatch(hand[bestIdx], top, state.currentColor);
     for (let k = 1; k < choices.length; k++) {
         const idx = choices[k];
         const s = scorer(hand[idx]);
-        if (s > bestScore) { bestIdx = idx; bestScore = s; }
+        const doubleMatch = isDoubleMatch(hand[idx], top, state.currentColor);
+        if ((doubleMatch && !bestIsDoubleMatch)
+            || (doubleMatch === bestIsDoubleMatch && s > bestScore)) {
+            bestIdx = idx;
+            bestScore = s;
+            bestIsDoubleMatch = doubleMatch;
+        }
     }
     return bestIdx;
 }
@@ -480,6 +501,7 @@ function describePlay(actorIdx, card, result, chosenColor) {
     if (result && result.victim !== null && result.victim !== undefined) {
         phrase += ` on ${playerName(result.victim)}`;
     }
+    if (result && result.doubleMatch) phrase += ' — Double Match; may play again';
     return phrase + '.';
 }
 
@@ -945,7 +967,7 @@ function endHumanTurn() {
     if (state.currentPlayer !== 0 || state.gameOver) { showEndTurnButton(false); return; }
     state.drewThisTurn = false;
     state.drawnCardId = null;
-    advance(state);
+    advanceAfterTurn(state);
     showEndTurnButton(false);
     afterMove(null);
 }
@@ -955,8 +977,7 @@ function afterMove(result) {
         const colorClass = result.card && !isWild(result.card) ? result.card.color : state.currentColor;
         showToast(TOAST_LABELS[result.effect], colorClass);
     }
-    // Chain card (-1) keeps the human's turn going. Make sure input isn't
-    // left locked from any prior step.
+    // A chain card or Double Match keeps the human's turn going.
     if (result && result.playAgain && state.currentPlayer === 0 && !state.gameOver) {
         humanInputLocked = false;
     }
@@ -969,6 +990,8 @@ function afterMove(result) {
     if (state.gameOver) return;
     if (state.currentPlayer !== 0) {
         scheduleBotTurn();
+    } else if (result && result.doubleMatch) {
+        renderStatus('Double Match! Your turn continues — play another card or draw.');
     } else {
         announceTurn();
     }
@@ -1024,7 +1047,7 @@ function onHumanChallenge() {
         state.lastActor = null;
         if (wasMyTurn) {
             // It was the human's own turn — forfeit it now.
-            advance(state);
+            advanceAfterTurn(state);
             render();
             chainNextTurn();
         } else {
@@ -1156,7 +1179,7 @@ function doBotTurn() {
         animatePlay(seat, flightCard, srcRect).then(() => {
             const result = executePlay(state, seat, idx, chosenColor);
             logEvent(state, describePlay(seat, card, result, chosenColor));
-            renderStatus(`${playerName(seat)} played ${describeCard(card)}${chosenColor ? ` — ${chosenColor}` : ''}.`);
+            renderStatus(`${playerName(seat)} played ${describeCard(card)}${chosenColor ? ` — ${chosenColor}` : ''}${result.doubleMatch ? ' — Double Match, plays again' : ''}.`);
             if (result.effect && TOAST_LABELS[result.effect]) {
                 const colorClass = !isWild(card) ? card.color : state.currentColor;
                 showToast(TOAST_LABELS[result.effect], colorClass);
@@ -1164,7 +1187,7 @@ function doBotTurn() {
             render();
             if (state.gameOver) { announceWinner(); return; }
             if (result.playAgain) {
-                // -1 chain: same bot plays again.
+                // Chain cards and Double Matches let the same bot play again.
                 setTimeout(() => doBotTurn(), 600);
                 return;
             }
@@ -1179,7 +1202,7 @@ function doBotTurn() {
         if (!drawn) {
             logEvent(state, `${playerName(seat)} drew nothing — deck empty.`);
             renderStatus(`Deck empty. ${playerName(seat)} passes.`);
-            advance(state);
+            advanceAfterTurn(state);
             chainNextTurn();
             return;
         }
@@ -1197,7 +1220,7 @@ function doBotTurn() {
                 setTimeout(() => {
                     if (state.gameOver) { humanInputLocked = false; return; }
                     const cardIdx = state.hands[seat].indexOf(drawn);
-                    if (cardIdx === -1) { advance(state); chainNextTurn(); return; }
+                    if (cardIdx === -1) { advanceAfterTurn(state); chainNextTurn(); return; }
                     if (state.hands[seat].length === 2 && !state.einsCalled[seat]
                         && Math.random() < BOT_EINS_REMEMBER) {
                         state.einsCalled[seat] = true;
@@ -1215,7 +1238,7 @@ function doBotTurn() {
                     animatePlay(seat, flightCard, srcRect).then(() => {
                         const result = executePlay(state, seat, cardIdx, chosenColor);
                         logEvent(state, describePlay(seat, drawn, result, chosenColor));
-                        renderStatus(`${playerName(seat)} played ${describeCard(drawn)}.`);
+                        renderStatus(`${playerName(seat)} played ${describeCard(drawn)}${result.doubleMatch ? ' — Double Match, plays again' : ''}.`);
                         if (result.effect && TOAST_LABELS[result.effect]) {
                             const colorClass = !isWild(drawn) ? drawn.color : state.currentColor;
                             showToast(TOAST_LABELS[result.effect], colorClass);
@@ -1232,7 +1255,7 @@ function doBotTurn() {
                 return;
             }
         }
-        advance(state);
+        advanceAfterTurn(state);
         chainNextTurn();
     });
 }
